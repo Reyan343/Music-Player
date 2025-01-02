@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QFileDialog, QListWidget, QLabel, QMessageBox
 )
-from PyQt5.QtMultimedia import QMediaPlayer
+from PyQt5.QtCore import QUrl
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 #from pygame import mixer
 
 class Window(QMainWindow):
@@ -18,13 +19,13 @@ class Window(QMainWindow):
         layout = QHBoxLayout()
         self.playButton = QPushButton("Pause Play", self)
         self.playButton.setCheckable(True)
-        #self.pauseButton = QPushButton("Pause", self)
+        self.pauseButton = QPushButton("Pause", self)
         self.openFileButton = QPushButton("Choose", self)
         
         self.songlist = QListWidget()
         
         layout.addWidget(self.playButton)
-        #layout.addWidget(self.pauseButton)
+        layout.addWidget(self.pauseButton)
         layout.addWidget(self.openFileButton)
         
         layout.addWidget(self.songlist)
@@ -32,8 +33,8 @@ class Window(QMainWindow):
         central_widget.setLayout(layout)
         
         self.openFileButton.clicked.connect(self.chooseFolder)
-        self.playButton.clicked.connect(self.pausePlay)
-        #self.pauseButton.clicked.connect(self.pausePlay)
+        self.playButton.clicked.connect(self.playSong)
+        self.pauseButton.clicked.connect(self.pausePlay)
         
     def chooseFolder(self):
         self.folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
@@ -50,27 +51,24 @@ class Window(QMainWindow):
             
     def playSong(self):        
         self.songToPlay = os.path.join(self.folder, self.songlist.currentItem().text()) # not sure why currentItem doesnt get the location as well
-        #self.songLocation = os.path.join(self.folder, self.songToPlay)
-        #print(self.songToPlay)
         
-        # Use QMediaPlayer instead of mixer
+        self.media_url = QUrl.fromLocalFile(self.songToPlay)
         
-        mixer.init()
+        self.player = QMediaPlayer()
         
-        mixer.music.load(self.songToPlay)
-        mixer.music.play()
+        self.player.setMedia(QMediaContent(self.media_url))
         
+        self.player.setVolume(100)
+        
+        self.player.play()
+        print(self.player.state())
+    
     def pausePlay(self):
-        self.playSong()
-        if self.playButton.isChecked():
-            self.isPaused = False
-        
-        if self.isPaused:
-            mixer.music.unpause()
-            self.isPaused = False
+        if self.player.state() == 1:
+            self.player.pause()
         else:
-            mixer.music.pause()
-            self.isPaused = True
+            self.player.play()
+    
         
 app = QApplication(sys.argv)
 window = Window()
